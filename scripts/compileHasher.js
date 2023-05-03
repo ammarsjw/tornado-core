@@ -2,11 +2,11 @@
 // mechanism
 const path = require('path')
 const fs = require('fs')
-const genContract = require('circomlib/src/mimcsponge_gencontract.js')
+const genContract = require('../misc/mimcsponge_gencontract.js')
 
 // where Truffle will expect to find the results of the external compiler
 // command
-const outputPath = path.join(__dirname, '..', 'build', 'Hasher.json')
+const outputPath = path.join(__dirname, '..', 'misc', 'Hasher.json')
 
 function main() {
   const contract = {
