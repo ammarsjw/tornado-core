@@ -5,7 +5,9 @@
 // import { ethers } from "ethers";
 const ethers = require('ethers');
 // import {Scalar} from "ffjavascript";
-const Scalar = require('ffjavascript');
+const {Scalar} = require('ffjavascript');
+const arrayify = require('arrayify');
+const ba = require('binascii');
 
 module.exports.Contract = class Contract {
     constructor() {
@@ -40,7 +42,7 @@ module.exports.Contract = class Contract {
             genLoadedLength = C.code.length;
         }
 
-        return ethers.utils.hexlify(C.code.concat(this.code));
+        return ba.hexlify(C.code.concat(this.code));
     }
 
     stop() { this.code.push(0x00); }
@@ -166,7 +168,7 @@ module.exports.Contract = class Contract {
             S = "0x" +S;
             data = S;
         }
-        const d = ethers.utils.arrayify(data);
+        const d = arrayify(data)
         if (d.length == 0 || d.length > 32) {
             throw new Error("Assertion failed");
         }
