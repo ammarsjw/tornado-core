@@ -1,0 +1,19 @@
+{
+  "name": "graph-tornado",
+  "license": "UNLICENSED",
+  "scripts": {
+    "codegen": "graph codegen",
+    "build": "graph build",
+    "deploy": "graph deploy --node https://api.thegraph.com/deploy/ ammarsjw/graph-tornado",
+    "create-local": "graph create --node http://localhost:8020/ ammarsjw/graph-tornado",
+    "remove-local": "graph remove --node http://localhost:8020/ ammarsjw/graph-tornado",
+    "deploy-local": "graph deploy --node http://localhost:8020/ --ipfs http://localhost:5001 ammarsjw/graph-tornado",
+    "test": "graph test",
+    "deploy-hosted": "graph deploy --product hosted-service ammarsjw/graph-tornado"
+  },
+  "dependencies": {
+    "@graphprotocol/graph-cli": "0.37.7",
+    "@graphprotocol/graph-ts": "0.29.1"
+  },
+  "devDependencies": { "matchstick-as": "0.5.0" }
+}

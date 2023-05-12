@@ -3,7 +3,7 @@ require('dotenv').config()
 
 const provider = new HDWalletProvider(
     process.env.PRIVATE_KEY,
-    'https://matic-mumbai.chainstacklabs.com'
+    'https://eth-goerli.g.alchemy.com/v2/Xx9_Sqddd-YRkHPeirhi4SXxoMNHaiCc'
 )
 
 const Web3 = require('web3');

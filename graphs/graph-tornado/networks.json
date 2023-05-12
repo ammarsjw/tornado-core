@@ -1,0 +1,8 @@
+{
+  "goerli": {
+    "ETHTornado": {
+      "address": "0x67698727EEF9fe6D5DC1A48aF1C4935F36975a2F",
+      "startBlock": 8969271
+    }
+  }
+}

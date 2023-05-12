@@ -196,6 +196,10 @@ contract Tornado is MerkleTreeWithHistory, ReentrancyGuard {
   // we store all commitments just to prevent accidental deposits with the same commitment
   mapping(bytes32 => bool) public commitments;
   IVerifier public verifier;
+  IVerifier public accountVerifier;
+
+  // THIS THIS THIS THIS THIS THIS THIS THIS THIS THIS THIS THIS
+  mapping(bytes32 => uint256) public accounts;
 
   // operator can update snark verification key
   // after the final trusted setup ceremony operator rights are supposed to be transferred to zero address
@@ -205,9 +209,9 @@ contract Tornado is MerkleTreeWithHistory, ReentrancyGuard {
     _;
   }
 
-  event Deposit(bytes32 indexed commitment, uint32 leafIndex, uint256 timestamp);
-  event Transfer(bytes32 indexed commitment, uint32 leafIndex, uint256 timestamp);
-  event Withdrawal(address to, bytes32 nullifierHash, address indexed relayer, uint256 fee);
+  event Deposit(address indexed recipient, uint256 amount);
+  event Withdrawal(address indexed recipient, uint256 amount);
+  event Move(address indexed recipient, uint256 amount);
 
   /**
     @dev The constructor
@@ -229,66 +233,39 @@ contract Tornado is MerkleTreeWithHistory, ReentrancyGuard {
     denomination = _denomination;
   }
 
-  /**
-    @dev Deposit funds into the contract. The caller must send (for ETH) or approve (for ERC20) value equal to or `denomination` of this instance.
-    @param _commitment the note commitment, which is PedersenHash(nullifier + secret)
-  */
-  function deposit(bytes32 _commitment) external payable nonReentrant {
-    require(!commitments[_commitment], "The commitment has been submitted");
+  // THIS THIS THIS THIS THIS THIS THIS THIS THIS THIS THIS THIS
+  function deposit(bytes calldata _accountProof, bytes32 _account, uint256 _amount) external payable nonReentrant {
+    // verifier will be a seprete contract that handles account verification
+    // extend the logic for security
+    require(accountVerifier.verifyProof(_accountProof, [uint256(_msgSender())]), "Invalid account verification proof");
+    accounts[_account] += _amount;
 
-    uint32 insertedIndex = _insert(_commitment);
-    commitments[_commitment] = true;
-    _processDeposit();
-
-    emit Deposit(_commitment, insertedIndex, block.timestamp);
+    emit Deposit(_recipient, _amount);
   }
 
   /** @dev this function is defined in a child contract */
   function _processDeposit() internal;
 
-  /**
-    @dev Withdraw a deposit from the contract. `proof` is a zkSNARK proof data, and input is an array of circuit public inputs
-    `input` array consists of:
-      - merkle root of all deposits in the contract
-      - hash of unique deposit nullifier to prevent double spends
-      - the recipient of funds
-      - optional fee that goes to the transaction sender (usually a relay)
-  */
-  function withdraw(bytes calldata _proof, bytes32 _root, bytes32 _nullifierHash, address payable _recipient, address payable _relayer, uint256 _fee, uint256 _refund) external payable nonReentrant {
-    require(_fee <= denomination, "Fee exceeds transfer value");
-    require(!nullifierHashes[_nullifierHash], "The note has been already spent");
-    require(isKnownRoot(_root), "Cannot find your merkle root"); // Make sure to use a recent one
-    require(verifier.verifyProof(_proof, [uint256(_root), uint256(_nullifierHash), uint256(_recipient), uint256(_relayer), _fee, _refund]), "Invalid withdraw proof");
+  // THIS THIS THIS THIS THIS THIS THIS THIS THIS THIS THIS THIS
+  function withdraw(bytes calldata _accountProof, bytes32 _account, uint256 _amount, bytes calldata _proof, address payable _recipient) external payable nonReentrant {
+    require(verifier.verifyProof(_proof, [uint256(_recipient)]), "Invalid withdraw proof");
+    accounts[_account] -= _amount;
+    _processWithdraw(_recipient);
 
-    nullifierHashes[_nullifierHash] = true;
-    _processWithdraw(_recipient, _relayer, _fee, _refund);
-    emit Withdrawal(_recipient, _nullifierHash, _relayer, _fee);
-  }
-
-  function transferFunds(bytes calldata _proof, bytes32 _root, bytes32 _nullifierHash, bytes32 _commitment, address payable _recipient, address payable _relayer, uint256 _fee, uint256 _refund) external payable nonReentrant {
-    require(_fee <= denomination, "Fee exceeds transfer value");
-    require(!nullifierHashes[_nullifierHash], "The note has been already spent");
-    require(isKnownRoot(_root), "Cannot find your merkle root"); // Make sure to use a recent one
-    require(verifier.verifyProof(_proof, [uint256(_root), uint256(_nullifierHash), uint256(_recipient), uint256(_relayer), _fee, _refund]), "Invalid withdraw proof");
-
-    nullifierHashes[_nullifierHash] = true;
-    // _processWithdraw(_recipient, _relayer, _fee, _refund);
-    _processTransfer(_commitment);
-    // emit Withdrawal(_recipient, _nullifierHash, _relayer, _fee);
-  }
-
-  function _processTransfer(bytes32 _commitment) internal nonReentrant {
-    require(!commitments[_commitment], "The commitment has been submitted");
-
-    uint32 insertedIndex = _insert(_commitment);
-    commitments[_commitment] = true;
-    // _processDeposit();
-
-    emit Transfer(_commitment, insertedIndex, block.timestamp);
+    emit Withdrawal(_recipient, _amount);
   }
 
   /** @dev this function is defined in a child contract */
   function _processWithdraw(address payable _recipient, address payable _relayer, uint256 _fee, uint256 _refund) internal;
+
+  // THIS THIS THIS THIS THIS THIS THIS THIS THIS THIS THIS THIS
+  function move(bytes calldata _accountProof, bytes32 _account, uint256 _amount, bytes calldata _proof, address payable _recipient) external payable nonReentrant {
+    require(verifier.verifyProof(_proof, [uint256(_recipient)]), "Invalid move proof");
+    accounts[_account] -= _amount;
+    accounts[_recipient] += _amount;
+
+    emit Move(_recipient, _amount);
+  }
 
   /** @dev whether a note is already spent */
   function isSpent(bytes32 _nullifierHash) public view returns(bool) {
