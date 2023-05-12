@@ -1,10 +1,12 @@
-type Deposit @entity(immutable: true) {
-  id: Bytes!
-  commitment: Bytes! # bytes32
-  leafIndex: BigInt! # uint32
-  timestamp: BigInt! # uint256
+type Deposit @entity(immutable: false) {
+  id: ID!
+  from: Bytes!
+  index: BigInt!
+  amount: String!
+  currency: String!
+  commitment: Bytes!
+  timestamp: BigInt!
   blockNumber: BigInt!
-  blockTimestamp: BigInt!
   transactionHash: Bytes!
 }
 

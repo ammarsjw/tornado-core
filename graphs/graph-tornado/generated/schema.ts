@@ -12,9 +12,9 @@ import {
 } from "@graphprotocol/graph-ts";
 
 export class Deposit extends Entity {
-  constructor(id: Bytes) {
+  constructor(id: string) {
     super();
-    this.set("id", Value.fromBytes(id));
+    this.set("id", Value.fromString(id));
   }
 
   save(): void {
@@ -22,24 +22,60 @@ export class Deposit extends Entity {
     assert(id != null, "Cannot save Deposit entity without an ID");
     if (id) {
       assert(
-        id.kind == ValueKind.BYTES,
-        `Entities of type Deposit must have an ID of type Bytes but the id '${id.displayData()}' is of type ${id.displayKind()}`
+        id.kind == ValueKind.STRING,
+        `Entities of type Deposit must have an ID of type String but the id '${id.displayData()}' is of type ${id.displayKind()}`
       );
-      store.set("Deposit", id.toBytes().toHexString(), this);
+      store.set("Deposit", id.toString(), this);
     }
   }
 
-  static load(id: Bytes): Deposit | null {
-    return changetype<Deposit | null>(store.get("Deposit", id.toHexString()));
+  static load(id: string): Deposit | null {
+    return changetype<Deposit | null>(store.get("Deposit", id));
   }
 
-  get id(): Bytes {
+  get id(): string {
     let value = this.get("id");
+    return value!.toString();
+  }
+
+  set id(value: string) {
+    this.set("id", Value.fromString(value));
+  }
+
+  get from(): Bytes {
+    let value = this.get("from");
     return value!.toBytes();
   }
 
-  set id(value: Bytes) {
-    this.set("id", Value.fromBytes(value));
+  set from(value: Bytes) {
+    this.set("from", Value.fromBytes(value));
+  }
+
+  get index(): BigInt {
+    let value = this.get("index");
+    return value!.toBigInt();
+  }
+
+  set index(value: BigInt) {
+    this.set("index", Value.fromBigInt(value));
+  }
+
+  get amount(): string {
+    let value = this.get("amount");
+    return value!.toString();
+  }
+
+  set amount(value: string) {
+    this.set("amount", Value.fromString(value));
+  }
+
+  get currency(): string {
+    let value = this.get("currency");
+    return value!.toString();
+  }
+
+  set currency(value: string) {
+    this.set("currency", Value.fromString(value));
   }
 
   get commitment(): Bytes {
@@ -49,15 +85,6 @@ export class Deposit extends Entity {
 
   set commitment(value: Bytes) {
     this.set("commitment", Value.fromBytes(value));
-  }
-
-  get leafIndex(): BigInt {
-    let value = this.get("leafIndex");
-    return value!.toBigInt();
-  }
-
-  set leafIndex(value: BigInt) {
-    this.set("leafIndex", Value.fromBigInt(value));
   }
 
   get timestamp(): BigInt {
@@ -76,15 +103,6 @@ export class Deposit extends Entity {
 
   set blockNumber(value: BigInt) {
     this.set("blockNumber", Value.fromBigInt(value));
-  }
-
-  get blockTimestamp(): BigInt {
-    let value = this.get("blockTimestamp");
-    return value!.toBigInt();
-  }
-
-  set blockTimestamp(value: BigInt) {
-    this.set("blockTimestamp", Value.fromBigInt(value));
   }
 
   get transactionHash(): Bytes {
