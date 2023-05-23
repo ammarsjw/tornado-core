@@ -1,11 +1,4 @@
-/**
- *Submitted for verification at polygonscan.com on 2023-05-08
-*/
-
-/**
- *Submitted for verification at Etherscan.io on 2019-12-16
-*/
-
+/* solhint-disable */
 // https://tornado.cash
 /*
 * d888888P                                           dP              a88888b.                   dP
@@ -22,6 +15,7 @@ pragma solidity ^0.5.8;
 interface IHasher {
   function MiMCSponge(uint256 in_xL, uint256 in_xR) external pure returns (uint256 xL, uint256 xR);
 }
+
 contract MerkleTreeWithHistory {
   uint256 public constant FIELD_SIZE = 21888242871839275222246405745257275088548364400416034343698204186575808495617;
   uint256 public constant ZERO_VALUE = 21663839004416932945382355908790599225266501822907911457504978515578255421292; // = keccak256("tornado") % FIELD_SIZE
@@ -184,11 +178,13 @@ contract ReentrancyGuard {
 
 pragma solidity ^0.5.8;
 
-
-
 contract IVerifier {
-  function verifyProof(bytes memory _proof, uint256[6] memory _input) public returns(bool);
+  function verifyProof(bytes memory _proof, uint256[1] memory _input) public returns (bool);
 }
+
+// contract IAccountVerifier {
+//   function verifyProof(bytes memory _proof, uint256[1] memory _input) public returns (bool);
+// }
 
 contract Tornado is MerkleTreeWithHistory, ReentrancyGuard {
   uint256 public denomination;
@@ -234,10 +230,10 @@ contract Tornado is MerkleTreeWithHistory, ReentrancyGuard {
   }
 
   // THIS THIS THIS THIS THIS THIS THIS THIS THIS THIS THIS THIS
-  function deposit(bytes calldata _accountProof, bytes32 _account, uint256 _amount) external payable nonReentrant {
+  function deposit(bytes calldata _accountProof, bytes32 _account, uint256 _amount, address _recipient) external payable nonReentrant {
     // verifier will be a seprete contract that handles account verification
     // extend the logic for security
-    require(accountVerifier.verifyProof(_accountProof, [uint256(_msgSender())]), "Invalid account verification proof");
+    require(accountVerifier.verifyProof(_accountProof, [uint256(msg.sender)]), "Invalid account verification proof");
     accounts[_account] += _amount;
 
     emit Deposit(_recipient, _amount);
@@ -256,7 +252,7 @@ contract Tornado is MerkleTreeWithHistory, ReentrancyGuard {
   }
 
   /** @dev this function is defined in a child contract */
-  function _processWithdraw(address payable _recipient, address payable _relayer, uint256 _fee, uint256 _refund) internal;
+  function _processWithdraw(address payable _recipient) internal;
 
   // THIS THIS THIS THIS THIS THIS THIS THIS THIS THIS THIS THIS
   function move(bytes calldata _accountProof, bytes32 _account, uint256 _amount, bytes calldata _proof, address payable _recipient) external payable nonReentrant {
@@ -337,54 +333,5 @@ contract ETHTornado is Tornado {
       (success, ) = _relayer.call.value(_fee)("");
       require(success, "payment to _relayer did not go thru");
     }
-  }
-}
-
-// File: contracts/MigratableETHTornado.sol
-
-pragma solidity ^0.5.8;
-
-
-contract TornadoCash_Eth_01 is ETHTornado {
-  bool public isMigrated = false;
-
-  constructor(
-    IVerifier _verifier,
-    uint256 _denomination,
-    uint32 _merkleTreeHeight,
-    address _operator,
-    IHasher _hasher
-  ) ETHTornado(_verifier, _denomination, _merkleTreeHeight, _operator, _hasher) public {
-  }
-
-  /**
-    @dev Migrate state from old v1 tornado.cash instance to this contract.
-    @dev only applies to eth 0.1 deposits
-    @param _commitments deposited commitments from previous contract
-    @param _nullifierHashes spent nullifiers from previous contract
-  */
-  function migrateState(bytes32[] calldata _commitments, bytes32[] calldata _nullifierHashes) external onlyOperator {
-    require(!isMigrated, "Migration is disabled");
-    for (uint32 i = 0; i < _commitments.length; i++) {
-      commitments[_commitments[i]] = true;
-      emit Deposit(_commitments[i], nextIndex + i, block.timestamp);
-    }
-
-    nextIndex += uint32(_commitments.length);
-
-    for (uint256 i = 0; i < _nullifierHashes.length; i++) {
-      nullifierHashes[_nullifierHashes[i]] = true;
-      emit Withdrawal(address(0), _nullifierHashes[i], address(0), 0);
-    }
-  }
-
-  function initializeTreeForMigration(bytes32[] calldata _filledSubtrees, bytes32 _root) external onlyOperator {
-    require(!isMigrated, "already migrated");
-    filledSubtrees = _filledSubtrees;
-    roots[0] = _root;
-  }
-
-  function finishMigration() external payable onlyOperator {
-    isMigrated = true;
   }
 }
